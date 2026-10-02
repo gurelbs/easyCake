@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>סטודיו עוגות תלת־ממד</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fdf3ee;--panel:#fff;--ink:#3a2a2e;--mut:#8a7378;--line:#f0dfd9;--acc:#e0577f;--soft:#fde4ec;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#241a1d;--panel:#2f2326;--ink:#f6e8ea;--mut:#b49aa0;--line:#47363b;--acc:#ff7aa2;--soft:#4a2a35}}
+:root[data-theme="dark"]{--bg:#241a1d;--panel:#2f2326;--ink:#f6e8ea;--mut:#b49aa0;--line:#47363b;--acc:#ff7aa2;--soft:#4a2a35}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Heebo,system-ui,sans-serif;overflow:hidden}
+[hidden]{display:none!important}
+#app{display:flex;height:100%}
+#panel{width:320px;flex:none;overflow-y:auto;padding:14px 16px;background:var(--panel);border-inline-end:1px solid var(--line)}
+#stage{flex:1;position:relative;min-width:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.tip{position:absolute;bottom:10px;inset-inline:0;text-align:center;font-size:12px;color:var(--mut);pointer-events:none}
+h1{font-size:20px;margin:0 0 4px;font-weight:800}
+h2{font-size:13px;margin:16px 0 6px;color:var(--mut);font-weight:600}
+.hint{font-size:12px;color:var(--mut);margin:0 0 8px}
+.seg{display:flex;gap:6px}
+button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer}
+.seg button{flex:1;font-size:13px}
+button.on{background:var(--soft);border-color:var(--acc);color:var(--acc);font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:14px}
+input[type=color]{width:42px;height:30px;border:1px solid var(--line);border-radius:8px;padding:0;background:none}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.row input[type=range]{width:60%}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tp{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.tp span{font-size:24px;line-height:1}.tp small{font-size:11px;color:var(--mut)}
+.tp:hover{border-color:var(--acc)}
+#sp{margin-top:12px;padding:10px;border:1px dashed var(--acc);border-radius:12px}
+#sp h2{margin-top:0}
+#ghost{position:fixed;display:none;pointer-events:none;font-size:34px;z-index:9;transform:translate(-50%,-60%)}
+@media (max-width:760px){
+ #app{flex-direction:column-reverse}
+ #stage{flex:none;height:52%}
+ #panel{width:auto;flex:1;border-inline-end:0;border-top:1px solid var(--line)}
+}
+</style></head><body>
+<div id="app">
+<aside id="panel">
+ <h1>🎂 סטודיו עוגות</h1>
+ <h2>צורה</h2>
+ <div class="seg" id="shapes"><button data-s="round" class="on">עגולה</button><button data-s="square">ריבועית</button><button data-s="hex">משושה</button></div>
+ <h2>קומות: <b id="tn">2</b></h2>
+ <input type="range" id="tiers" min="1" max="4" value="2">
+ <h2>צבעים</h2>
+ <div id="tc"></div>
+ <div class="row"><label for="cream">קרם וקישוט</label><input type="color" id="cream" value="#fff6ee"></div>
+ <div class="row"><label for="plate">צלחת</label><input type="color" id="plate" value="#ffffff"></div>
+ <h2>תצוגה</h2>
+ <div class="seg"><button id="zi">＋ קירוב</button><button id="zo">－ הרחקה</button><button id="rs">⟲ איפוס</button></div>
+ <label class="row"><span>סיבוב אוטומטי</span><input type="checkbox" id="ar"></label>
+ <h2>תוספות</h2>
+ <p class="hint">גררו תוספת אל העוגה ושחררו כדי לנעוץ אותה. אפשר לגרור תוספת קיימת כדי להזיז אותה.</p>
+ <div class="grid" id="tp"></div>
+ <div id="sp" hidden>
+  <h2>נבחר: <b id="sn"></b></h2>
+  <div class="row"><label for="sc">צבע</label><input type="color" id="sc"></div>
+  <div class="row"><label for="ss">גודל</label><input type="range" id="ss" min=".4" max="2.2" step=".05"></div>
+  <div class="row"><label for="sr">סיבוב</label><input type="range" id="sr" min="0" max="360"></div>
+  <div class="seg"><button id="del">🗑 הסר</button><button id="clr">נקה הכל</button></div>
+ </div>
+</aside>
+<main id="stage"><canvas id="cv"></canvas><div class="tip">גרירה: סיבוב · גלגלת / צביטה: זום · קליק ימני / שתי אצבעות: הזזה</div></main>
+</div>
+<div id="ghost"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(()=>{
+const T=THREE,V=T.Vector3,Y=new V(0,1,0),$=s=>document.querySelector(s);
+const cv=$('#cv'),stage=$('#stage');
+const renderer=new T.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new T.Scene(),cam=new T.PerspectiveCamera(38,1,.1,100);
+const controls=new T.OrbitControls(cam,cv);
+Object.assign(controls,{enableDamping:true,minDistance:3,maxDistance:18,maxPolarAngle:Math.PI*.49,autoRotateSpeed:1.5});
+scene.add(new T.HemisphereLight(0xffffff,0xf0d9d0,.8));
+const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(5,9,6);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-7,right:7,top:7,bottom:-7,near:1,far:30});sun.shadow.bias=-.0004;scene.add(sun);
+const floor=new T.Mesh(new T.CircleGeometry(12,48),new T.ShadowMaterial({opacity:.18}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-.1;floor.receiveShadow=true;scene.add(floor);
+
+/* ---------- cake ---------- */
+const st={shape:'round',tiers:2,cols:['#f6c9d0','#fbe3c4','#d9e6c8','#cfe0f5'],cream:'#fff6ee',plate:'#ffffff'};
+const SEG={round:64,square:4,hex:6},KF={round:1,square:1.12,hex:1.03};
+const BR=2.2,H=1.1,CAP=.07,STEP=H+CAP;
+const cakeG=new T.Group(),top=new T.Group();scene.add(cakeG,top);
+let cakeMeshes=[],tierMats=[],creamMat,plateMat,sel=null;
+const mesh=(g,m)=>{const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;return o};
+const mat=(c,o)=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.55},o));
+function buildCake(){
+ cakeG.clear();cakeMeshes=[];tierMats=[];
+ creamMat=mat(st.cream,{roughness:.45});plateMat=mat(st.plate,{roughness:.3,metalness:.1});
+ const seg=SEG[st.shape],rot=st.shape==='square'?Math.PI/4:0;
+ const add=(r,h,m,y)=>{const g=new T.CylinderGeometry(r,r,h,seg);g.rotateY(rot);const o=mesh(g,m);o.position.y=y;cakeG.add(o);cakeMeshes.push(o)};
+ const pl=mesh(new T.CylinderGeometry(BR*1.5,BR*1.5,.1,64),plateMat);pl.position.y=-.05;cakeG.add(pl);
+ for(let i=0;i<st.tiers;i++){
+  const r=BR*Math.pow(.72,i)*KF[st.shape],m=mat(st.cols[i],{roughness:.8}),y0=i*STEP;tierMats.push(m);
+  add(r,H,m,y0+H/2);add(r*1.012,CAP,creamMat,y0+H+CAP/2);add(r*1.012,.09,creamMat,y0+.045);
+ }
+ controls.target.y=st.tiers*STEP/2;
+}
+function tierUI(){
+ const c=$('#tc');c.innerHTML='';
+ for(let i=0;i<st.tiers;i++){
+  const d=document.createElement('div');d.className='row';
+  d.innerHTML=`<label>קומה ${i+1}${i?'':' (תחתונה)'}</label><input type="color" value="${st.cols[i]}">`;
+  d.lastChild.oninput=e=>{st.cols[i]=e.target.value;tierMats[i].color.set(e.target.value)};
+  c.appendChild(d);
+ }
+}
+
+/* ---------- toppings ---------- */
+const DEF={rose:['🌹','ורד','#d6293e'],daisy:['🌼','חיננית','#ffffff'],tulip:['🌷','צבעוני','#ff8fb1'],blossom:['🌸','פריחה','#ffc2d9'],
+ leaf:['🍃','עלה','#3f8f4a'],strawberry:['🍓','תות','#d8213a'],cherry:['🍒','דובדבן','#9d0b25'],pearl:['⚪','פנינה','#fdf7ee'],
+ star:['⭐','כוכב','#f5c542'],heart:['❤️','לב','#ff5c8a'],candle:['🕯️','נר','#ffd1e3'],macaron:['🍪','מקרון','#b8e0c8']};
+const sph=new T.SphereGeometry(1,12,9);
+const part=(g,m,t)=>{const o=mesh(g,m);if(t)o.userData.tint=1;return o};
+function petals(g,rows,m){
+ rows.forEach((w,ri)=>{for(let i=0;i<w.n;i++){
+  const rg=new T.Group(),pv=new T.Group();rg.rotation.y=i/w.n*Math.PI*2+ri*.7;
+  pv.position.set(0,w.h||0,w.r||0);pv.rotation.x=w.t;
+  const p=part(sph,m,1);p.scale.set(w.w,w.l/2,w.k||.04);p.position.y=w.l/2;
+  pv.add(p);rg.add(pv);g.add(rg);
+ }});
+}
+const flat=(shape,depth,m,bev)=>{
+ const o=part(new T.ExtrudeGeometry(shape,{depth,bevelEnabled:!!bev,bevelSize:.02,bevelThickness:.03,bevelSegments:2}),m,1);
+ return o;
+};
+const B={
+ rose:c=>{const g=new T.Group();petals(g,[{n:7,t:.95,l:.36,w:.17,h:0,r:.1,k:.05},{n:6,t:.62,l:.34,w:.15,h:.04,r:.07,k:.05},{n:5,t:.34,l:.3,w:.13,h:.07,r:.045,k:.05},{n:3,t:.12,l:.24,w:.1,h:.09,r:.02,k:.05}],mat(c,{roughness:.5}));return g},
+ daisy:c=>{const g=new T.Group();petals(g,[{n:16,t:1.4,l:.42,w:.07,k:.02,r:.05,h:.02}],mat(c));
+  const o=part(sph,mat('#f4c20d'),0);o.scale.set(.13,.07,.13);o.position.y=.05;g.add(o);return g},
+ tulip:c=>{const g=new T.Group();petals(g,[{n:6,t:.28,l:.6,w:.17,k:.06,r:.1},{n:3,t:.08,l:.5,w:.14,k:.05,r:.04,h:.03}],mat(c));return g},
+ blossom:c=>{const g=new T.Group();petals(g,[{n:5,t:1.15,l:.34,w:.18,k:.04,r:.03,h:.03}],mat(c));
+  const o=part(sph,mat('#f4c20d'),0);o.scale.setScalar(.06);o.position.y=.06;g.add(o);return g},
+ leaf:c=>{const g=new T.Group(),m=mat(c),s=new T.Shape();
+  s.moveTo(0,0);s.bezierCurveTo(.25,.15,.25,.5,0,.85);s.bezierCurveTo(-.25,.5,-.25,.15,0,0);
+  [-.5,.5].forEach(a=>{const l=new T.Group(),o=flat(s,.03,m);o.rotation.x=-Math.PI/2+.22;l.rotation.y=a;l.add(o);g.add(l)});return g},
+ strawberry:c=>{const g=new T.Group(),p=[[0,0],[.3,.05],[.42,.22],[.36,.5],[.2,.75],[.05,.9],[0,.92]].map(a=>new T.Vector2(a[0],a[1]));
+  const o=part(new T.LatheGeometry(p,16),mat(c,{side:T.DoubleSide}),1);g.add(o);
+  petals(g,[{n:5,t:1.2,l:.2,w:.07,k:.015,r:.04,h:.02}],mat('#3f8f4a'));g.scale.setScalar(.6);return g},
+ cherry:c=>{const g=new T.Group(),o=part(sph,mat(c,{roughness:.25}),1);o.scale.setScalar(.22);o.position.y=.22;g.add(o);
+  const cu=new T.CatmullRomCurve3([new V(0,.4,0),new V(.04,.6,.03),new V(.2,.72,.05)]);
+  g.add(part(new T.TubeGeometry(cu,10,.015,5),mat('#5c8a3a'),0));return g},
+ pearl:c=>{const g=new T.Group(),o=part(sph,mat(c,{metalness:.5,roughness:.2}),1);o.scale.setScalar(.1);o.position.y=.09;g.add(o);return g},
+ star:c=>{const g=new T.Group(),s=new T.Shape();
+  for(let i=0;i<10;i++){const r=i%2?.17:.4,a=Math.PI/5*i,x=Math.sin(a)*r,y=Math.cos(a)*r;i?s.lineTo(x,y):s.moveTo(x,y)}
+  const o=flat(s,.1,mat(c,{metalness:.6,roughness:.3}));o.rotation.x=-Math.PI/2;g.add(o);return g},
+ heart:c=>{const g=new T.Group(),s=new T.Shape();
+  s.moveTo(.25,.25);s.bezierCurveTo(.25,.25,.2,0,0,0);s.bezierCurveTo(-.3,0,-.3,.35,-.3,.35);s.bezierCurveTo(-.3,.55,-.1,.77,.25,.95);
+  s.bezierCurveTo(.6,.77,.8,.55,.8,.35);s.bezierCurveTo(.8,.35,.8,0,.5,0);s.bezierCurveTo(.35,0,.25,.25,.25,.25);
+  const o=flat(s,.14,mat(c,{roughness:.35}),1);o.geometry.scale(.5,.5,1);o.geometry.translate(-.125,-.24,.03);o.rotation.x=-Math.PI/2;g.add(o);return g},
+ candle:c=>{const g=new T.Group(),b=part(new T.CylinderGeometry(.07,.07,.8,12),mat(c),1);b.position.y=.4;g.add(b);
+  const f=part(sph,mat('#ffb22e',{emissive:'#ff9a1f'}),0);f.userData.keep=1;f.scale.set(.06,.12,.06);f.position.y=.93;g.add(f);return g},
+ macaron:c=>{const g=new T.Group(),m=mat(c,{roughness:.7}),h=new T.SphereGeometry(1,16,8,0,Math.PI*2,0,Math.PI/2);
+  const a=part(h,m,1);a.scale.set(.3,.14,.3);a.rotation.x=Math.PI;a.position.y=.14;
+  const b=part(h,m,1);b.scale.set(.3,.14,.3);b.position.y=.21;
+  const cr=part(new T.CylinderGeometry(.27,.27,.07,16),mat('#fffaf0'),0);cr.position.y=.175;g.add(a,b,cr);return g}
+};
+function build(t){
+ const g=new T.Group();g.add(B[t](DEF[t][2]));
+ g.userData={root:1,type:t,color:DEF[t][2],spin:Math.random()*6.28,size:1,n:new V(0,1,0)};return g;
+}
+function orient(o){
+ const u=o.userData,q=new T.Quaternion().setFromUnitVectors(Y,u.n);
+ q.multiply(new T.Quaternion().setFromAxisAngle(Y,u.spin));o.quaternion.copy(q);o.scale.setScalar(u.size);
+}
+function place(o,h){
+ const n=h.face.normal.clone().transformDirection(h.object.matrixWorld).normalize();
+ o.position.copy(h.point).addScaledVector(n,-.02);o.userData.n=n;orient(o);o.visible=true;
+}
+const glow=(o,on)=>o.traverse(m=>{if(m.isMesh&&!m.userData.keep)m.material.emissive.setHex(on?0x3a3a55:0)});
+function select(o){
+ if(sel)glow(sel,0);sel=o;$('#sp').hidden=!o;
+ if(!o)return;glow(o,1);const u=o.userData;
+ $('#sn').textContent=DEF[u.type][1];$('#sc').value=u.color;$('#ss').value=u.size;$('#sr').value=Math.round(u.spin*180/Math.PI)%360;
+}
+$('#sc').oninput=e=>{if(!sel)return;sel.userData.color=e.target.value;sel.traverse(m=>{if(m.userData.tint)m.material.color.set(e.target.value)})};
+$('#ss').oninput=e=>{if(sel){sel.userData.size=+e.target.value;orient(sel)}};
+$('#sr').oninput=e=>{if(sel){sel.userData.spin=e.target.value*Math.PI/180;orient(sel)}};
+const del=()=>{if(sel){top.remove(sel);select(null)}};
+$('#del').onclick=del;$('#clr').onclick=()=>{top.clear();select(null)};
+addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&!/INPUT/.test(document.activeElement.tagName))del()});
+
+/* ---------- picking & dragging ---------- */
+const rc=new T.Raycaster(),ghost=$('#ghost');let drag=null,dp=null,downHit=false;
+function ray(e){
+ const r=cv.getBoundingClientRect();
+ if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return null;
+ rc.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1),cam);return rc;
+}
+const hitCake=e=>{const r=ray(e);return r?r.intersectObjects(cakeMeshes,false)[0]:null};
+const moveGhost=e=>{ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px'};
+function startNew(t,e){
+ e.preventDefault();const o=build(t);o.visible=false;top.add(o);select(o);
+ drag={o,isNew:true};ghost.textContent=DEF[t][0];ghost.style.display='block';moveGhost(e);controls.enabled=false;
+}
+cv.addEventListener('pointerdown',e=>{
+ dp=[e.clientX,e.clientY];downHit=false;const r=ray(e);if(!r)return;
+ const h=r.intersectObjects(top.children,true)[0];
+ if(h){let o=h.object;while(o&&!o.userData.root)o=o.parent;
+  if(o){downHit=true;select(o);drag={o,isNew:false};controls.enabled=false}}
+},true);
+cv.addEventListener('pointerup',e=>{
+ if(!downHit&&dp&&Math.hypot(e.clientX-dp[0],e.clientY-dp[1])<5)select(null);
+});
+addEventListener('pointermove',e=>{
+ if(!drag)return;moveGhost(e);const h=hitCake(e);
+ if(h){place(drag.o,h);ghost.style.display='none'}
+ else if(drag.isNew){drag.o.visible=false;ghost.style.display='block'}
+});
+const endDrag=()=>{
+ if(!drag)return;
+ if(drag.isNew&&!drag.o.visible){top.remove(drag.o);select(null)}
+ drag=null;ghost.style.display='none';controls.enabled=true;
+};
+addEventListener('pointerup',endDrag);addEventListener('pointercancel',endDrag);
+
+/* ---------- UI wiring ---------- */
+const grid=$('#tp');
+Object.keys(DEF).forEach(t=>{
+ const b=document.createElement('button');b.className='tp';b.innerHTML=`<span>${DEF[t][0]}</span><small>${DEF[t][1]}</small>`;
+ b.addEventListener('pointerdown',e=>startNew(t,e));grid.appendChild(b);
+});
+function refit(){
+ scene.updateMatrixWorld(true);
+ [...top.children].forEach(o=>{
+  rc.set(new V(o.position.x,50,o.position.z),new V(0,-1,0));
+  const h=rc.intersectObjects(cakeMeshes,false)[0];
+  if(h)place(o,h);else{top.remove(o);if(sel===o)select(null)}
+ });
+}
+document.querySelectorAll('#shapes button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#shapes button').forEach(x=>x.classList.toggle('on',x===b));
+ st.shape=b.dataset.s;buildCake();refit();
+});
+$('#tiers').oninput=e=>{st.tiers=+e.target.value;$('#tn').textContent=st.tiers;tierUI();buildCake();refit()};
+$('#cream').oninput=e=>creamMat.color.set(st.cream=e.target.value);
+$('#plate').oninput=e=>plateMat.color.set(st.plate=e.target.value);
+const zoom=f=>{const d=cam.position.clone().sub(controls.target).multiplyScalar(f);cam.position.copy(controls.target).add(d)};
+$('#zi').onclick=()=>zoom(.8);$('#zo').onclick=()=>zoom(1.25);
+const reset=()=>{controls.target.set(0,st.tiers*STEP/2,0);cam.position.set(5.5,5,8)};
+$('#rs').onclick=reset;$('#ar').onchange=e=>controls.autoRotate=e.target.checked;
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);
+buildCake();tierUI();reset();resize();
+/* starter decoration */
+[['rose',0,0],['leaf',.55,.2],['leaf',-.5,.25],['cherry',-.3,-.55]].forEach(([t,x,z])=>{
+ const o=build(t);top.add(o);scene.updateMatrixWorld(true);rc.set(new V(x,50,z),new V(0,-1,0));
+ const h=rc.intersectObjects(cakeMeshes,false)[0];if(h)place(o,h);else top.remove(o);
+});
+(function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,cam)})();
+})();
+</script></body></html>
